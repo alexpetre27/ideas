@@ -5,11 +5,13 @@ import {
   Bell,
   ChevronsUpDown,
   LogOut,
-  Sparkles,
   LogIn,
   UserPlus,
+  Loader2,
 } from "lucide-react";
 import React from "react";
+import { useSession, signOut } from "next-auth/react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -26,13 +28,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+
 type UserData = {
-  name: string;
-  email: string;
-  avatar: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
 };
 interface NavUserProps {
-  user: UserData | null;
   onLoginClick?: () => void;
   onSignupClick?: () => void;
 }
@@ -47,6 +49,15 @@ function LoggedInContent({
   const dropdownSide = isMobile ? "bottom" : "right";
   const dropdownAlign = "end" as const;
 
+  const userName = user.name || "Utilizator";
+  const userEmail = user.email || "Fără email";
+  const userAvatar = user.image || undefined;
+  const initials = userName.slice(0, 2).toUpperCase();
+
+  const handleLogout = async () => {
+    await signOut();
+  };
+
   return (
     <>
       <DropdownMenuTrigger asChild>
@@ -55,12 +66,12 @@ function LoggedInContent({
           className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
         >
           <Avatar className="h-8 w-8 rounded-lg">
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+            <AvatarImage src={userAvatar} alt={userName} />
+            <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
           </Avatar>
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-medium">{user.name}</span>
-            <span className="truncate text-xs">{user.email}</span>
+            <span className="truncate font-medium">{userName}</span>
+            <span className="truncate text-xs">{userEmail}</span>
           </div>
           <ChevronsUpDown className="ml-auto size-4" />
         </SidebarMenuButton>
@@ -74,22 +85,15 @@ function LoggedInContent({
         <DropdownMenuLabel className="p-0 font-normal">
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <Avatar className="h-8 w-8 rounded-lg">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+              <AvatarImage src={userAvatar} alt={userName} />
+              <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{user.name}</span>
-              <span className="truncate text-xs">{user.email}</span>
+              <span className="truncate font-medium">{userName}</span>
+              <span className="truncate text-xs">{userEmail}</span>
             </div>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <Sparkles className="mr-2 h-4 w-4" />
-            Upgrade to Pro
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
@@ -102,7 +106,7 @@ function LoggedInContent({
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           Log out
         </DropdownMenuItem>
@@ -110,7 +114,6 @@ function LoggedInContent({
     </>
   );
 }
-
 function LoggedOutContent({
   isMobile,
   onLoginClick,
@@ -159,30 +162,43 @@ function LoggedOutContent({
   );
 }
 
-export function NavUser({
-  user = null,
-  onLoginClick,
-  onSignupClick,
-}: NavUserProps) {
+export function NavUser({ onLoginClick, onSignupClick }: NavUserProps) {
+  const { data: session, status } = useSession();
   const { isMobile } = useSidebar();
 
-  const userIsLoggedIn = user && user.name;
+  const userIsAuthenticated = status === "authenticated";
+  const isLoading = status === "loading";
+
+  let content;
+
+  if (isLoading) {
+    content = (
+      <SidebarMenuButton size="lg" disabled>
+        <Loader2 className="size-5 animate-spin" />
+        <span className="flex-1 text-left font-medium">Loading...</span>
+      </SidebarMenuButton>
+    );
+  } else if (userIsAuthenticated && session?.user) {
+    content = (
+      <DropdownMenu>
+        <LoggedInContent user={session.user as UserData} isMobile={isMobile} />
+      </DropdownMenu>
+    );
+  } else {
+    content = (
+      <DropdownMenu>
+        <LoggedOutContent
+          isMobile={isMobile}
+          onLoginClick={onLoginClick}
+          onSignupClick={onSignupClick}
+        />
+      </DropdownMenu>
+    );
+  }
 
   return (
     <SidebarMenu>
-      <SidebarMenuItem>
-        <DropdownMenu>
-          {userIsLoggedIn ? (
-            <LoggedInContent user={user as UserData} isMobile={isMobile} />
-          ) : (
-            <LoggedOutContent
-              isMobile={isMobile}
-              onLoginClick={onLoginClick}
-              onSignupClick={onSignupClick}
-            />
-          )}
-        </DropdownMenu>
-      </SidebarMenuItem>
+      <SidebarMenuItem>{content}</SidebarMenuItem>
     </SidebarMenu>
   );
 }
