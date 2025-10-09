@@ -17,13 +17,14 @@ export default function Page() {
   };
 
   return (
-    <div className="p-8 w-full">
+    <div className=" pr-8 pl-8 w-full">
       <ChartPieLabel />
-      <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
+      <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
         <AddTransactionDialog onAdd={handleAddTransaction} />
         <Button variant="outline">Remove Data</Button>
         <Button variant="outline">Modify Data</Button>
       </div>
+
       <Toaster />
     </div>
   );

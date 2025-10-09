@@ -15,9 +15,6 @@ import {
 
 import { ChartContainer, ChartConfig, ChartTotal } from "@/components/ui/chart";
 
-// -----------------------------
-// Date și configurare
-// -----------------------------
 const chartData = [
   { browser: "Chrome", visitors: 275 },
   { browser: "Safari", visitors: 200 },
@@ -106,8 +103,6 @@ export function ChartPieLabel() {
               ))}
             </Pie>
           </PieChart>
-
-          {/* Textul central animat */}
           <ChartTotal>
             <div
               className={`flex flex-col items-center justify-center transform transition-all duration-300 ease-out ${
