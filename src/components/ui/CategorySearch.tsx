@@ -1,5 +1,4 @@
-"use client";
-
+"use client ";
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// LISTA ACTUALIZATĂ pentru a se potrivi cu numele categoriilor financiare
 const FINANCIAL_CATEGORIES = [
   { value: "all", label: "Toate Categoriile" },
   { value: "food", label: "Mâncare" },
@@ -28,6 +26,7 @@ interface CategorySearchProps {
   onSearch: (searchTerm: string, category: string) => void;
   maxWidth?: string;
 }
+
 export function CategorySearch({
   onSearch,
   maxWidth = "max-w-3xl",
@@ -35,17 +34,20 @@ export function CategorySearch({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryValue, setSelectedCategoryValue] = useState("all");
 
-  const selectedCategoryLabel = FINANCIAL_CATEGORIES.find(
-    (c) => c.value === selectedCategoryValue
-  )?.label;
-
+  const selectedCategoryLabel =
+    FINANCIAL_CATEGORIES.find((c) => c.value === selectedCategoryValue)
+      ?.label ?? "Toate Categoriile";
   const handleSearchClick = () => {
     onSearch(searchTerm, selectedCategoryValue);
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearchClick();
+  };
+
   const handleCategoryChange = (categoryValue: string) => {
     setSelectedCategoryValue(categoryValue);
-    // Aplica filtrarea imediat după schimbarea categoriei
     onSearch(searchTerm, categoryValue);
   };
 
@@ -55,11 +57,12 @@ export function CategorySearch({
 
   return (
     <div className="flex w-full justify-center">
-      <div
+      <form
+        onSubmit={handleFormSubmit}
         className={`flex w-full ${maxWidth} border border-input rounded-lg shadow-sm overflow-hidden bg-background`}
       >
         <Button
-          type="button"
+          type="submit"
           onClick={handleSearchClick}
           variant="ghost"
           size="icon"
@@ -68,18 +71,15 @@ export function CategorySearch({
         >
           <Search className="h-4 w-4" />
         </Button>
+
         <Input
           type="text"
           placeholder="Introdu termenul de căutare..."
           value={searchTerm}
           onChange={handleInputChange}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleSearchClick();
-            }
-          }}
           className="flex-grow border-none shadow-none focus-visible:ring-0 h-auto px-2"
         />
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -96,8 +96,9 @@ export function CategorySearch({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel>Filtrează după Categorie</DropdownMenuLabel>
+            <DropdownMenuLabel>Filtrează după categorie</DropdownMenuLabel>
             <DropdownMenuSeparator />
+
             {FINANCIAL_CATEGORIES.map((category) => (
               <DropdownMenuItem
                 key={category.value}
@@ -113,7 +114,7 @@ export function CategorySearch({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </form>
     </div>
   );
 }

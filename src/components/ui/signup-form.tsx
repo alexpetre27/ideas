@@ -60,7 +60,7 @@ export function SignupForm({
       }
     } else {
       toast.error("Eroare de validare", {
-        description: "Te rugăm să introduci Data Nașterii.",
+        description: "Te rugăm să introduci data nașterii.",
         duration: 3000,
       });
       return;
@@ -110,17 +110,15 @@ export function SignupForm({
           </CardTitle>
           <CardDescription>
             {session
-              ? `You are currently logged in as ${
-                  session.user?.email || "user"
-                }.`
-              : "Enter your details below to create a new account"}
+              ? `Esti conectat ca ${session.user?.email || "user"}.`
+              : "Introduceti detaliile mai jos pentru a crea un cont nou"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {session ? (
             <div className="flex flex-col gap-4 pt-2">
               <Button type="button" onClick={handleLogout}>
-                Log Out
+                Deconectare
               </Button>
             </div>
           ) : (
@@ -128,7 +126,7 @@ export function SignupForm({
               <FieldGroup>
                 <div className="grid grid-cols-2 gap-4">
                   <Field>
-                    <FieldLabel htmlFor="firstName">First Name</FieldLabel>
+                    <FieldLabel htmlFor="firstName">Prenume</FieldLabel>
                     <Input
                       id="firstName"
                       type="text"
@@ -137,7 +135,7 @@ export function SignupForm({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
+                    <FieldLabel htmlFor="lastName">Nume</FieldLabel>
                     <Input
                       id="lastName"
                       type="text"
@@ -158,24 +156,24 @@ export function SignupForm({
                 </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="dob">Date of Birth</FieldLabel>
+                  <FieldLabel htmlFor="dob">Data Nașterii</FieldLabel>
                   <Input id="dob" name="dob" type="date" required />
                 </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="password-signup">Password</FieldLabel>
+                  <FieldLabel htmlFor="password-signup">Parola</FieldLabel>
                   <Input id="password-signup" type="password" required />
                 </Field>
 
                 <Field>
-                  <Button type="submit">Sign Up</Button>
+                  <Button type="submit">Înregistrează-te</Button>
                   <Button type="button" onClick={() => signIn("google")}>
-                    Sign Up using Google
+                    Înregistrează-te cu Google
                   </Button>
                   <FieldDescription className="text-center">
-                    Already have an account?{" "}
+                    Nu ai un cont?
                     <a href="#" onClick={handleLoginLinkClick}>
-                      Log in
+                      Conectează-te
                     </a>
                   </FieldDescription>
                 </Field>

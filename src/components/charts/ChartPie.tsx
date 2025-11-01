@@ -23,25 +23,32 @@ interface PieChartDataItem {
 interface ChartPieLabelProps {
   data: PieChartDataItem[];
 }
-const BUDGET_CATEGORIES = [
-  "FOOD",
-  "TRANSPORT",
-  "BILLS",
-  "ENTERTAINMENT",
-  "SALARY",
-  "OTHER",
+
+const COLOR_PALETTE = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
+  "var(--chart-7)",
+  "var(--chart-8)",
 ];
 
-const chartConfig: ChartConfig = {
-  FOOD: { label: "Mâncare", color: "var(--chart-1)" },
-  TRANSPORT: { label: "Transport", color: "var(--chart-2)" },
-  BILLS: { label: "Facturi", color: "var(--chart-3)" },
-  ENTERTAINMENT: { label: "Divertisment", color: "var(--chart-4)" },
-  SALARY: { label: "Salariu", color: "var(--chart-5)" },
-  OTHER: { label: "Altele", color: "var(--chart-6)" },
-};
 export function ChartPieLabel({ data }: ChartPieLabelProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  const chartConfig: ChartConfig = useMemo(() => {
+    const config: ChartConfig = {};
+    data.forEach((item, index) => {
+      const label = item.name.charAt(0) + item.name.slice(1).toLowerCase();
+      config[item.name] = {
+        label: label,
+        color: COLOR_PALETTE[index % COLOR_PALETTE.length],
+      };
+    });
+    return config;
+  }, [data]);
   const totalValue = useMemo(
     () => data.reduce((sum, item) => sum + item.value, 0),
     [data]
@@ -91,62 +98,64 @@ export function ChartPieLabel({ data }: ChartPieLabelProps) {
           config={chartConfig}
           className="mx-auto aspect-square max-h-[260px]"
         >
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={70}
-              outerRadius={100}
-              activeIndex={hoverIndex ?? undefined}
-              activeShape={renderActiveShape}
-              onMouseEnter={(_, index) => setHoverIndex(index)}
-              onMouseLeave={() => setHoverIndex(null)}
-              isAnimationActive
-              animationDuration={500}
-              animationEasing="ease-out"
-            >
-              {data.map((entry) => (
-                <Cell
-                  key={entry.name}
-                  fill={
-                    chartConfig[entry.name as keyof typeof chartConfig]
-                      ?.color || "var(--color-foreground)"
-                  }
-                  style={{
-                    transition: "fill 0.4s ease, transform 0.3s ease",
-                  }}
-                />
-              ))}
-            </Pie>
-          </PieChart>
-          <ChartTotal>
-            <div
-              className={`flex flex-col items-center justify-center transform transition-all duration-300 ease-out ${
-                activeData ? "scale-105 opacity-100" : "scale-100 opacity-90"
-              }`}
-            >
-              {activeData ? (
-                <>
-                  <span className="text-sm text-muted-foreground">
-                    {activeLabel}
-                  </span>
-                  <span className="text-2xl font-bold tabular-nums">
-                    {activeData.value.toFixed(2)} RON
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="text-2xl font-bold tabular-nums">
-                    {totalValue.toFixed(2)} RON
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Total Cheltuieli
-                  </span>
-                </>
-              )}
-            </div>
-          </ChartTotal>
+          <div className="relative w-full h-full">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={70}
+                outerRadius={100}
+                activeIndex={hoverIndex ?? undefined}
+                activeShape={renderActiveShape}
+                onMouseEnter={(_, index) => setHoverIndex(index)}
+                onMouseLeave={() => setHoverIndex(null)}
+                isAnimationActive
+                animationDuration={500}
+                animationEasing="ease-out"
+              >
+                {data.map((entry, index) => (
+                  <Cell
+                    key={entry.name}
+                    fill={
+                      chartConfig[entry.name as keyof typeof chartConfig]
+                        ?.color || COLOR_PALETTE[index % COLOR_PALETTE.length]
+                    }
+                    style={{
+                      transition: "fill 0.4s ease, transform 0.3s ease",
+                    }}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+            <ChartTotal>
+              <div
+                className={`flex flex-col items-center justify-center transform transition-all duration-300 ease-out ${
+                  activeData ? "scale-105 opacity-100" : "scale-100 opacity-90"
+                }`}
+              >
+                {activeData ? (
+                  <>
+                    <span className="text-sm text-muted-foreground">
+                      {activeLabel}
+                    </span>
+                    <span className="text-2xl font-bold tabular-nums">
+                      {activeData.value.toFixed(2)} RON
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-2xl font-bold tabular-nums">
+                      {totalValue.toFixed(2)} RON
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Total Cheltuieli
+                    </span>
+                  </>
+                )}
+              </div>
+            </ChartTotal>
+          </div>
         </ChartContainer>
       </CardContent>
 

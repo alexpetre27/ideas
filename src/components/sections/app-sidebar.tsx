@@ -1,10 +1,9 @@
 "use client";
 
 import { Calendar, Home, Inbox, Search, Settings } from "lucide-react";
-import { useState } from "react";
-import React from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { NavUser } from "../ui/nav-user";
-import { LoginForm } from "@/components/login-form";
+import { LoginForm } from "@/components/ui/login-form";
 import { toast, Toaster } from "sonner";
 
 import {
@@ -19,12 +18,12 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-import { SignupForm } from "@/components/signup-form";
+import { SignupForm } from "@/components/ui/signup-form";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 interface ContentProps {
@@ -36,7 +35,9 @@ interface SwitchContentProps extends ContentProps {
 function LoginModalContent({ onClose, onSwitch }: SwitchContentProps) {
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Log In to Budget Tracker</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Autentificare în Budget Tracker
+      </h2>
       <LoginForm onClose={onClose} onSignupRequest={onSwitch} />
     </div>
   );
@@ -44,7 +45,7 @@ function LoginModalContent({ onClose, onSwitch }: SwitchContentProps) {
 function SignupModalContent({ onClose, onSwitch }: SwitchContentProps) {
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Create Your Account</h2>
+      <h2 className="text-xl font-semibold mb-4">Creează-ți Contul</h2>
       <SignupForm onClose={onClose} onLoginRequest={onSwitch} />
     </div>
   );
@@ -68,21 +69,21 @@ const AppModal = ({ isOpen, onClose, children }: ModalProps) => {
   );
 };
 const items = [
-  { title: "Home", url: "#", icon: Home },
-  { title: "Inbox", url: "#", icon: Inbox },
+  { title: "Acasă", url: "#", icon: Home },
+  { title: "Mesaje", url: "#", icon: Inbox },
   { title: "Calendar", url: "#", icon: Calendar },
-  { title: "Search", url: "#", icon: Search },
-  { title: "Settings", url: "#", icon: Settings },
+  { title: "Căutare", url: "#", icon: Search },
+  { title: "Setări", url: "#", icon: Settings },
 ];
 
 export function AppSidebar() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [shouldAnnounceLoginClose, setShouldAnnounceLoginClose] =
+    useState(false);
   const closeLoginModal = () => {
     setIsLoginModalOpen(false);
-    toast.info("Login modal closed.", {
-      description: "Modalul de logare a fost închis.",
-    });
+    setShouldAnnounceLoginClose(true);
   };
   const closeSignupModal = () => {
     setIsSignupModalOpen(false);
@@ -103,6 +104,17 @@ export function AppSidebar() {
     setIsSignupModalOpen(false);
     setIsLoginModalOpen(true);
   };
+
+  useEffect(() => {
+    if (!shouldAnnounceLoginClose) {
+      return;
+    }
+
+    toast.info("Fereastra de autentificare închisă.", {
+      description: "Fereastra de logare a fost închisă.",
+    });
+    setShouldAnnounceLoginClose(false);
+  }, [shouldAnnounceLoginClose]);
 
   return (
     <>
@@ -128,28 +140,23 @@ export function AppSidebar() {
         </SidebarContent>
         <SidebarFooter>
           <NavUser
-            user={null}
             onLoginClick={handleLoginClick}
             onSignupClick={handleSignupClick}
           />
         </SidebarFooter>
       </Sidebar>
-
       <AppModal isOpen={isLoginModalOpen} onClose={closeLoginModal}>
         <LoginModalContent
           onClose={closeLoginModal}
           onSwitch={handleLoginToSignup}
         />
       </AppModal>
-
       <AppModal isOpen={isSignupModalOpen} onClose={closeSignupModal}>
         <SignupModalContent
           onClose={closeSignupModal}
           onSwitch={handleSignupToLogin}
         />
       </AppModal>
-
-      <Toaster position="bottom-right" richColors />
     </>
   );
 }

@@ -85,17 +85,15 @@ export function LoginForm({
           <CardTitle>{session ? "Account Status" : "Log In"}</CardTitle>
           <CardDescription>
             {session
-              ? `You are currently logged in as ${
-                  session.user?.email || "user"
-                }.`
-              : "Enter your email below to log in to your account"}
+              ? `Esti conectat ca ${session.user?.email || "user"}.`
+              : "Introduceti emailul pentru a va conecta la contul dvs."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {session ? (
             <div className="flex flex-col gap-4 pt-2">
               <Button type="button" onClick={handleLogout}>
-                Log Out
+                Deconecteaza-te
               </Button>
             </div>
           ) : (
@@ -112,21 +110,21 @@ export function LoginForm({
                 </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="password-login">Password</FieldLabel>
+                  <FieldLabel htmlFor="password-login">Parola</FieldLabel>
                   <Input id="password-login" type="password" required />
                 </Field>
 
                 <Field>
-                  <Button type="submit">Log In</Button>
+                  <Button type="submit">Conectare</Button>
 
                   <Button type="button" onClick={handleGoogleLogin}>
-                    Log in using Google
+                    Conectare cu Google
                   </Button>
 
                   <FieldDescription className="text-center">
-                    Don't have an account?{" "}
+                    Nu ai un cont?{" "}
                     <a href="#" onClick={handleSignupLinkClick}>
-                      Sign up
+                      Înregistreaza-te
                     </a>
                   </FieldDescription>
                 </Field>

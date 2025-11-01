@@ -1,4 +1,4 @@
-// path: src/components/ui/chart.tsx
+
 "use client";
 
 import * as React from "react";
@@ -7,7 +7,6 @@ import { ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 
 export const THEMES = { light: "", dark: ".dark" } as const;
 
-/** Config for charts (labels, icons, colors or theme colors) */
 export type ChartConfig = {
   [key: string]: {
     label?: React.ReactNode;
@@ -29,7 +28,6 @@ export function useChart(): ChartContextProps {
   return ctx;
 }
 
-/** ChartContainer - provides context and ResponsiveContainer wrapper */
 export function ChartContainer({
   id,
   className,
@@ -38,7 +36,7 @@ export function ChartContainer({
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & {
   config: ChartConfig;
-  children: React.ReactNode;
+  children: React.ReactElement;
 }) {
   const uniqueId = React.useId();
   const chartId = `chart-${id ?? uniqueId.replace(/:/g, "")}`;
@@ -57,7 +55,6 @@ export function ChartContainer({
   );
 }
 
-/** ChartTotal - absolutely centered overlay (pointer-events-none) */
 export function ChartTotal({
   className,
   children,
@@ -76,7 +73,6 @@ export function ChartTotal({
   );
 }
 
-/** ChartStyle - injects CSS variables for colors (supports THEMES) */
 export function ChartStyle({
   id,
   config,
@@ -106,7 +102,6 @@ export function ChartStyle({
   return <style dangerouslySetInnerHTML={{ __html: css }} />;
 }
 
-/** Lightweight typed payload item for tooltip usage */
 export type PayloadItem = {
   name?: string;
   value?: string | number;
@@ -114,10 +109,8 @@ export type PayloadItem = {
   color?: string;
 };
 
-/** Tooltip export (Recharts wrapper) */
 export const ChartTooltip = RechartsTooltip;
 
-/** ChartTooltipContent - simple typed custom tooltip */
 export function ChartTooltipContent({
   active,
   payload,
@@ -136,7 +129,7 @@ export function ChartTooltipContent({
     <div
       className={cn(
         "rounded-lg border border-border/40 bg-background px-3 py-2 text-xs shadow-md",
-        "z-50 relative", // 👈 adaugă asta
+        "z-50 relative",
         className
       )}
     >
@@ -157,7 +150,6 @@ export function ChartTooltipContent({
   );
 }
 
-/** ChartLegendContent - minimal, typed */
 export function ChartLegendContent({
   payload,
   hideIcon = false,
