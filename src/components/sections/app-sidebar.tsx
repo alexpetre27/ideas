@@ -2,8 +2,6 @@
 
 import { Calendar, Home, Inbox, Search, Settings } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { NavUser } from "../ui/nav-user";
-import { LoginForm } from "@/components/ui/login-form";
 import { toast, Toaster } from "sonner";
 
 import {
@@ -17,7 +15,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useSession, signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// --------------------
 
+import { NavUser } from "../ui/nav-user";
+import { LoginForm } from "@/components/ui/login-form";
 import { SignupForm } from "@/components/ui/signup-form";
 
 interface ModalProps {
@@ -32,6 +36,7 @@ interface ContentProps {
 interface SwitchContentProps extends ContentProps {
   onSwitch: () => void;
 }
+
 function LoginModalContent({ onClose, onSwitch }: SwitchContentProps) {
   return (
     <div className="p-6">
@@ -68,19 +73,17 @@ const AppModal = ({ isOpen, onClose, children }: ModalProps) => {
     </div>
   );
 };
-const items = [
-  { title: "Acasă", url: "#", icon: Home },
-  { title: "Mesaje", url: "#", icon: Inbox },
-  { title: "Calendar", url: "#", icon: Calendar },
-  { title: "Căutare", url: "#", icon: Search },
-  { title: "Setări", url: "#", icon: Settings },
-];
+
+const items = [{ title: "Acasă", url: "/dashboard", icon: Home }];
 
 export function AppSidebar() {
+  const { data: session, status } = useSession();
+
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [shouldAnnounceLoginClose, setShouldAnnounceLoginClose] =
     useState(false);
+
   const closeLoginModal = () => {
     setIsLoginModalOpen(false);
     setShouldAnnounceLoginClose(true);
@@ -88,11 +91,9 @@ export function AppSidebar() {
   const closeSignupModal = () => {
     setIsSignupModalOpen(false);
   };
-
   const handleLoginClick = () => {
     setIsLoginModalOpen(true);
   };
-
   const handleSignupClick = () => {
     setIsSignupModalOpen(true);
   };
@@ -138,13 +139,57 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+
         <SidebarFooter>
-          <NavUser
-            onLoginClick={handleLoginClick}
-            onSignupClick={handleSignupClick}
-          />
+          {status === "loading" && (
+            <div className="p-4 text-sm text-muted-foreground">
+              Se încarcă...
+            </div>
+          )}
+
+          {status === "unauthenticated" && (
+            <NavUser
+              onLoginClick={handleLoginClick}
+              onSignupClick={handleSignupClick}
+            />
+          )}
+
+          {status === "authenticated" && session && (
+            <div className="w-full">
+              <div className="flex items-center gap-3 mb-4 p-2 rounded-lg border">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage
+                    src={session?.user?.image ?? ""}
+                    alt={session?.user?.name ?? ""}
+                  />
+                  <AvatarFallback>
+                    {session?.user?.name
+                      ? session.user.name.charAt(0)
+                      : session?.user?.email?.charAt(0) ?? ""}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-sm overflow-hidden">
+                  <p className="font-medium truncate">
+                    {session?.user?.name ?? session?.user?.email ?? ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {session?.user?.email ?? ""}
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => signOut({ redirectTo: "/" })}
+              >
+                Deconectare
+              </Button>
+            </div>
+          )}
         </SidebarFooter>
       </Sidebar>
+
       <AppModal isOpen={isLoginModalOpen} onClose={closeLoginModal}>
         <LoginModalContent
           onClose={closeLoginModal}
@@ -157,6 +202,7 @@ export function AppSidebar() {
           onSwitch={handleSignupToLogin}
         />
       </AppModal>
+      <Toaster />
     </>
   );
 }

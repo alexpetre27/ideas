@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
+import { getUserId, unauthenticatedError } from "@/lib/session";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const userId = await getUserId();
+
     const aggregatedData = await prisma.transaction.groupBy({
       where: {
+        userId: userId,
         type: TransactionType.EXPENSE,
-        categoryId: { not: null },
         amount: { gt: 0 },
       },
       by: ["categoryId"],
@@ -18,7 +23,9 @@ export async function GET() {
       return NextResponse.json([], { status: 200 });
     }
 
-    const categoryIds = aggregatedData.map((item) => item.categoryId!);
+    const categoryIds = aggregatedData
+      .map((item) => item.categoryId)
+      .filter((id) => id !== null) as number[];
 
     const categories = await prisma.category.findMany({
       where: {
@@ -31,30 +38,17 @@ export async function GET() {
 
     const chartData = aggregatedData
       .map((item) => {
-        if (item.categoryId == null) {
-          return null;
-        }
-
         const rawSum = item._sum.amount;
+        if (rawSum === null) return null;
+        const numeric = typeof rawSum === "number" ? rawSum : rawSum.toNumber();
+        if (!isFinite(numeric) || numeric <= 0) return null;
 
-        if (rawSum === null) {
-          return null;
-        }
-        const numeric =
-          typeof rawSum === "number"
-            ? rawSum
-            : typeof (rawSum as any)?.toNumber === "function"
-            ? (rawSum as any).toNumber()
-            : Number(rawSum);
+        const categoryName =
+          item.categoryId === null
+            ? "Necategorisit"
+            : categoryMap.get(item.categoryId) ?? "Necunoscut";
 
-        if (!isFinite(numeric) || numeric <= 0) {
-          return null;
-        }
-
-        return {
-          name: categoryMap.get(item.categoryId) ?? "Necunoscut",
-          value: numeric,
-        };
+        return { name: categoryName, value: numeric };
       })
       .filter(Boolean) as { name: string; value: number }[];
 
@@ -62,6 +56,9 @@ export async function GET() {
 
     return NextResponse.json(chartData, { status: 200 });
   } catch (error) {
+    if ((error as Error).message === "Utilizator nelogat") {
+      return unauthenticatedError();
+    }
     console.error("❌ Eroare la preluarea datelor pentru chart:", error);
     return NextResponse.json(
       { error: "Failed to fetch chart data" },

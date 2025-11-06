@@ -1,7 +1,3 @@
-enum TransactionType {
-  INCOME
-  EXPENSE
-}
 
 generator client {
   provider = "prisma-client-js"
@@ -11,30 +7,67 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
 
-model User {
-  id           Int           @id @default(autoincrement())
-  name         String
-  image        String?
-  createdAt    DateTime      @default(now())
-  transactions Transaction[] 
-}
 model Category {
-  id           Int           @id @default(autoincrement())
-  name         String        @unique
-  transactions Transaction[] 
+  id   Int    @id @default(autoincrement())
+  name String @unique 
+  transactions Transaction[]
 }
+
 model Transaction {
-  id             Int             @id @default(autoincrement())
-  title          String
-  amount         Decimal
-  type           TransactionType
-  date           DateTime        @default(now())
-  note           String?
-  
-  userId         Int?
-  user           User?           @relation(fields: [userId], references: [id])
-  
-  categoryId     Int?
-  category       Category?        @relation(fields: [categoryId], references: [id])
+  id     Int             @id @default(autoincrement())
+  title  String
+  amount Decimal
+  type   TransactionType
+  date   DateTime        @default(now())
+  note   String?
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([categoryId])
+  @@index([userId])
+}
+model User {
+  id            Int           @id @default(autoincrement())
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  transactions Transaction[]
+}
+model Account {
+  id                Int     @id @default(autoincrement())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
 }

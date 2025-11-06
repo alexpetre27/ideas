@@ -3,11 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
 import { getUserId, unauthenticatedError } from "@/lib/session";
 
-export const dynamic = "force-dynamic";
-
-export async function POST(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const userId = await getUserId();
+    const id = parseInt(params.id);
     const body = await request.json();
     const { title, amount, type, date, categoryId, note } = body;
 
@@ -40,7 +42,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newTransaction = await prisma.transaction.create({
+    const transaction = await prisma.transaction.findFirst({
+      where: { id: id, userId: userId },
+    });
+
+    if (!transaction) {
+      return NextResponse.json(
+        { error: "Tranzacție negăsită sau neautorizată." },
+        { status: 404 }
+      );
+    }
+
+    const updatedTransaction = await prisma.transaction.update({
+      where: { id: id },
       data: {
         title,
         amount: parsedAmount,
@@ -48,23 +62,22 @@ export async function POST(request: NextRequest) {
         date: new Date(date),
         note: note || null,
         category: { connect: { id: parsedCategoryId } },
-        user: { connect: { id: userId } },
       },
       include: {
         category: { select: { id: true, name: true } },
       },
     });
 
-    return NextResponse.json(newTransaction, { status: 201 });
+    return NextResponse.json(updatedTransaction, { status: 200 });
   } catch (error) {
     if ((error as Error).message === "Utilizator nelogat") {
       return unauthenticatedError();
     }
-    console.error("❌ Eroare la crearea tranzacției:", error);
+    console.error("❌ Eroare la modificarea tranzacției:", error);
     if ((error as any)?.code === "P2025") {
       return NextResponse.json(
-        { error: "Categoria (ID) nu există." },
-        { status: 400 }
+        { error: "Categoria nu a fost găsită." },
+        { status: 404 }
       );
     }
     return NextResponse.json(
@@ -74,47 +87,39 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const userId = await getUserId();
-    const searchParams = request.nextUrl.searchParams;
-    const query = searchParams.get("query")?.trim() || "";
-    const categoryValue = searchParams.get("category") || "all";
+    const id = parseInt(params.id);
 
-    const whereClause: any = {
-      userId: userId,
-    };
-
-    if (query) {
-      whereClause.title = { contains: query, mode: "insensitive" };
-    }
-
-    if (categoryValue !== "all") {
-      if (categoryValue === "Necategorisit") {
-        whereClause.categoryId = null;
-      } else {
-        whereClause.category = {
-          name: { equals: categoryValue, mode: "insensitive" },
-        };
-      }
-    }
-
-    const transactions = await prisma.transaction.findMany({
-      where: whereClause,
-      orderBy: { date: "desc" },
-      include: {
-        category: { select: { id: true, name: true } },
+    const deleteResult = await prisma.transaction.deleteMany({
+      where: {
+        id: id,
+        userId: userId,
       },
     });
 
-    return NextResponse.json(transactions, { status: 200 });
+    if (deleteResult.count === 0) {
+      return NextResponse.json(
+        { error: "Tranzacție negăsită sau neautorizată." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Tranzacție ștearsă cu succes." },
+      { status: 200 }
+    );
   } catch (error) {
     if ((error as Error).message === "Utilizator nelogat") {
       return unauthenticatedError();
     }
-    console.error("❌ Eroare la preluarea tranzacțiilor:", error);
+    console.error("❌ Eroare la ștergerea tranzacției:", error);
     return NextResponse.json(
-      { error: "Failed to fetch transactions" },
+      { error: "Eroare internă la server." },
       { status: 500 }
     );
   }

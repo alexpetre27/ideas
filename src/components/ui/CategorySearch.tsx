@@ -1,5 +1,6 @@
-"use client ";
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ChevronDown, ListFilter } from "lucide-react";
@@ -12,47 +13,68 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const FINANCIAL_CATEGORIES = [
-  { value: "all", label: "Toate Categoriile" },
-  { value: "food", label: "Mâncare" },
-  { value: "transport", label: "Transport" },
-  { value: "bills", label: "Facturi" },
-  { value: "entertainment", label: "Divertisment" },
-  { value: "salary", label: "Salariu" },
-  { value: "other", label: "Altele" },
-];
+interface Category {
+  id: number | string;
+  name: string;
+}
 
 interface CategorySearchProps {
+  categories: Category[];
+  query: string;
+  category: string;
   onSearch: (searchTerm: string, category: string) => void;
   maxWidth?: string;
 }
 
 export function CategorySearch({
+  categories = [],
+  query,
+  category,
   onSearch,
   maxWidth = "max-w-3xl",
 }: CategorySearchProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategoryValue, setSelectedCategoryValue] = useState("all");
+  const [internalTerm, setInternalTerm] = useState(query);
+  const [internalCategory, setInternalCategory] = useState(category);
+
+  const allCategories = useMemo(
+    () => [{ id: "all", name: "Toate Categoriile" }, ...categories],
+    [categories]
+  );
 
   const selectedCategoryLabel =
-    FINANCIAL_CATEGORIES.find((c) => c.value === selectedCategoryValue)
-      ?.label ?? "Toate Categoriile";
-  const handleSearchClick = () => {
-    onSearch(searchTerm, selectedCategoryValue);
-  };
+    allCategories.find((c) =>
+      c.id === "all" ? internalCategory === "all" : c.name === internalCategory
+    )?.name ?? "Toate Categoriile";
+
+  useEffect(() => {
+    setInternalTerm(query);
+  }, [query]);
+
+  useEffect(() => {
+    setInternalCategory(category);
+  }, [category]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch(internalTerm, internalCategory);
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [internalTerm, internalCategory, onSearch]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSearchClick();
+    onSearch(internalTerm, internalCategory);
   };
 
-  const handleCategoryChange = (categoryValue: string) => {
-    setSelectedCategoryValue(categoryValue);
-    onSearch(searchTerm, categoryValue);
+  const handleCategoryChange = (newCategoryValue: string) => {
+    setInternalCategory(newCategoryValue);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    setInternalTerm(e.target.value);
   };
 
   return (
@@ -63,7 +85,6 @@ export function CategorySearch({
       >
         <Button
           type="submit"
-          onClick={handleSearchClick}
           variant="ghost"
           size="icon"
           className="rounded-none h-auto px-4 text-muted-foreground hover:bg-transparent"
@@ -75,7 +96,7 @@ export function CategorySearch({
         <Input
           type="text"
           placeholder="Introdu termenul de căutare..."
-          value={searchTerm}
+          value={internalTerm}
           onChange={handleInputChange}
           className="flex-grow border-none shadow-none focus-visible:ring-0 h-auto px-2"
         />
@@ -99,19 +120,20 @@ export function CategorySearch({
             <DropdownMenuLabel>Filtrează după categorie</DropdownMenuLabel>
             <DropdownMenuSeparator />
 
-            {FINANCIAL_CATEGORIES.map((category) => (
-              <DropdownMenuItem
-                key={category.value}
-                onClick={() => handleCategoryChange(category.value)}
-                className={
-                  category.value === selectedCategoryValue
-                    ? "bg-accent font-medium"
-                    : ""
-                }
-              >
-                {category.label}
-              </DropdownMenuItem>
-            ))}
+            {allCategories.map((cat) => {
+              const catValue = cat.id === "all" ? "all" : cat.name;
+              return (
+                <DropdownMenuItem
+                  key={cat.id}
+                  onClick={() => handleCategoryChange(catValue)}
+                  className={
+                    catValue === internalCategory ? "bg-accent font-medium" : ""
+                  }
+                >
+                  {cat.name}
+                </DropdownMenuItem>
+              );
+            })}
           </DropdownMenuContent>
         </DropdownMenu>
       </form>

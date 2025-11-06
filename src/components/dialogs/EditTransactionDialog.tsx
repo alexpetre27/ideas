@@ -26,10 +26,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { useTransactions } from "@/components/TransactionBar/TransactionsProvider";
+import {
+  useTransactions,
+  TransactionData,
+} from "@/components/TransactionBar/TransactionsProvider";
 
 interface RawTransactionInput {
   title: string;
@@ -40,17 +43,23 @@ interface RawTransactionInput {
   note?: string | null;
 }
 
-interface AddTransactionDialogProps {
-  onAdd?: (data: RawTransactionInput) => Promise<void>;
+interface EditTransactionDialogProps {
+  transaction: TransactionData;
 }
 
-export function AddTransactionDialog({ onAdd }: AddTransactionDialogProps) {
-  const { categories } = useTransactions();
-  const [date, setDate] = useState<Date | undefined>(new Date());
+export function EditTransactionDialog({
+  transaction,
+}: EditTransactionDialogProps) {
+  const { categories, updateTransaction } = useTransactions();
+  const [date, setDate] = useState<Date | undefined>(
+    new Date(transaction.date)
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
     const formData = new FormData(e.currentTarget);
     const formTitle = formData.get("title") as string;
     const formAmount = formData.get("amount") as string;
@@ -74,6 +83,7 @@ export function AddTransactionDialog({ onAdd }: AddTransactionDialogProps) {
       alert(
         "Vă rugăm completați toate câmpurile obligatorii (Titlu, Sumă, Categorie, Tip, Data) cu valori valide."
       );
+      setIsLoading(false);
       return;
     }
 
@@ -86,29 +96,28 @@ export function AddTransactionDialog({ onAdd }: AddTransactionDialogProps) {
       note: formNote,
     };
 
-    if (onAdd) {
-      try {
-        await onAdd(rawData);
-        setIsDialogOpen(false);
-      } catch (error) {
-        console.error("Eroare la adăugarea tranzacției:", error);
-      }
+    try {
+      await updateTransaction(transaction.id, rawData);
+      setIsLoading(false);
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Eroare la modificarea tranzacției:", error);
+      setIsLoading(false);
     }
   };
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-auto sm:w-[150px]">
-          Adaugă Tranzacție
+        <Button variant="outline" size="icon" className="h-8 w-8">
+          <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adaugă Tranzacție Nouă</DialogTitle>
+          <DialogTitle>Modifică Tranzacția</DialogTitle>
           <DialogDescription className="mt-2 mb-4 text-sm text-muted-foreground">
-            Introdu detaliile tranzacției mai jos și apasă Salvează pentru a o
-            adăuga.
+            Modifică detaliile tranzacției și apasă Salvează.
           </DialogDescription>
         </DialogHeader>
 
@@ -118,7 +127,7 @@ export function AddTransactionDialog({ onAdd }: AddTransactionDialogProps) {
             <Input
               id="title"
               name="title"
-              placeholder="Ex: Cumpărături alimentare"
+              defaultValue={transaction.title}
               required
             />
           </div>
@@ -130,7 +139,7 @@ export function AddTransactionDialog({ onAdd }: AddTransactionDialogProps) {
               name="amount"
               type="number"
               step="0.01"
-              placeholder="Ex: 120.50"
+              defaultValue={transaction.amount}
               min="0.01"
               inputMode="decimal"
               required
@@ -139,7 +148,11 @@ export function AddTransactionDialog({ onAdd }: AddTransactionDialogProps) {
 
           <div className="grid gap-2">
             <Label htmlFor="category">Categorie</Label>
-            <Select name="category" required>
+            <Select
+              name="category"
+              defaultValue={String(transaction.category?.id)}
+              required
+            >
               <SelectTrigger id="category">
                 <SelectValue placeholder="Selectează categoria" />
               </SelectTrigger>
@@ -155,7 +168,7 @@ export function AddTransactionDialog({ onAdd }: AddTransactionDialogProps) {
 
           <div className="grid gap-2">
             <Label htmlFor="type">Tip</Label>
-            <Select name="type" defaultValue="EXPENSE" required>
+            <Select name="type" defaultValue={transaction.type} required>
               <SelectTrigger id="type">
                 <SelectValue placeholder="Selectează tipul" />
               </SelectTrigger>
@@ -191,7 +204,12 @@ export function AddTransactionDialog({ onAdd }: AddTransactionDialogProps) {
 
           <div className="grid gap-2">
             <Label htmlFor="note">Notă (Opțional)</Label>
-            <Input id="note" name="note" placeholder="Ex: Plată cash" />
+            <Input
+              id="note"
+              name="note"
+              defaultValue={transaction.note || ""}
+              placeholder="Ex: Plată cash"
+            />
           </div>
 
           <DialogFooter>
@@ -202,7 +220,9 @@ export function AddTransactionDialog({ onAdd }: AddTransactionDialogProps) {
             >
               Anulează
             </Button>
-            <Button type="submit">Salvează</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Se salvează..." : "Salvează"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

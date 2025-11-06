@@ -105,9 +105,7 @@ export function SignupForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>
-            {session ? "Account Status" : "Create an Account"}
-          </CardTitle>
+          <CardTitle>{session ? "Account Status" : ""}</CardTitle>
           <CardDescription>
             {session
               ? `Esti conectat ca ${session.user?.email || "user"}.`
@@ -171,7 +169,7 @@ export function SignupForm({
                     Înregistrează-te cu Google
                   </Button>
                   <FieldDescription className="text-center">
-                    Nu ai un cont?
+                    Ai deja un cont? <br />
                     <a href="#" onClick={handleLoginLinkClick}>
                       Conectează-te
                     </a>

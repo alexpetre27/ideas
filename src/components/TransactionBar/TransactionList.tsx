@@ -1,32 +1,67 @@
 "use client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { TransactionData } from "@/components/TransactionBar/TransactionsProvider";
+import {
+  TransactionData,
+  useTransactions,
+} from "@/components/TransactionBar/TransactionsProvider";
+import { format } from "date-fns";
+import { ro } from "date-fns/locale";
+import { EditTransactionDialog } from "../dialogs/EditTransactionDialog";
+import { Button } from "../ui/button";
+import { Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
+
 interface TransactionListProps {
   transactions: TransactionData[];
-  currentQuery: string;
-  currentCategory: string;
 }
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("ro-RO", {
+    style: "currency",
+    currency: "RON",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
 export default function TransactionList({
   transactions = [],
-  currentQuery,
-  currentCategory,
 }: TransactionListProps) {
-  const filteredTransactions = transactions.filter((tx) => {
-    const title = (tx.title || "").toLowerCase();
-    const query = (currentQuery || "").toLowerCase();
-    const matchesQuery = title.includes(query);
+  const { deleteTransaction } = useTransactions();
+  const [isDeleting, setIsDeleting] = useState(false);
 
-    const categoryName = tx.category?.name?.toLowerCase() || "";
-    const category = (currentCategory || "").toLowerCase();
+  const handleDelete = async (id: number) => {
+    setIsDeleting(true);
+    try {
+      await deleteTransaction(id);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
-    const matchesCategory = category === "all" || categoryName === category;
-
-    return matchesQuery && matchesCategory;
-  });
-
-  if (!filteredTransactions.length) {
+  if (!transactions.length) {
     return (
       <div className="text-center text-muted-foreground py-8">
         Nu au fost găsite tranzacții care să corespundă criteriilor de căutare.
@@ -36,13 +71,12 @@ export default function TransactionList({
 
   return (
     <div className="mt-8 space-y-4">
-      {filteredTransactions.map((tx, index) => {
+      {transactions.map((tx) => {
         const transactionNote = tx.note?.trim();
-        const key = tx.id ?? `temp-key-${index}`;
 
         return (
           <Card
-            key={key}
+            key={tx.id}
             className="border border-border hover:shadow-md transition-all duration-200"
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -51,42 +85,34 @@ export default function TransactionList({
               </CardTitle>
               <div className="flex items-center gap-2">
                 <Badge
-                  variant={tx.type === "INCOME" ? "default" : "secondary"}
+                  variant={tx.type === "INCOME" ? "default" : "destructive"}
                   className={
                     tx.type === "INCOME"
                       ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "bg-red-500 hover:bg-red-600 text-white"
+                      : ""
                   }
                 >
                   {tx.type === "INCOME" ? "Venit" : "Cheltuială"}
                 </Badge>
                 {tx.category && (
-                  <Badge
-                    style={{
-                      backgroundColor:
-                        tx.category?.color || "hsl(var(--accent))",
-                    }}
-                    className="text-white"
-                  >
-                    {tx.category?.name}
-                  </Badge>
+                  <Badge variant="outline">{tx.category?.name}</Badge>
                 )}
               </div>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-1">
+            <CardContent className="text-sm text-muted-foreground space-y-1 pb-4">
               <p>
                 <span className="font-medium text-foreground">Sumă:</span>{" "}
                 <span
                   className={
-                    tx.type === "INCOME" ? "text-green-600" : "text-red-500"
+                    tx.type === "INCOME" ? "text-green-600" : "text-destructive"
                   }
                 >
-                  {tx.amount.toFixed(2)} lei
+                  {formatCurrency(tx.amount)}
                 </span>
               </p>
               <p>
                 <span className="font-medium text-foreground">Dată:</span>{" "}
-                {new Date(tx.date).toLocaleString("ro-RO")}
+                {format(new Date(tx.date), "PPP", { locale: ro })}
               </p>
 
               {transactionNote && (
@@ -96,6 +122,36 @@ export default function TransactionList({
                 </>
               )}
             </CardContent>
+
+            <CardFooter className="flex justify-end gap-2 border-t pt-4">
+              <EditTransactionDialog transaction={tx} />
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="icon" className="h-8 w-8">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Ești absolut sigur?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Această acțiune nu poate fi anulată. Tranzacția va fi
+                      ștearsă permanent.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Anulează</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(tx.id)}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Se șterge..." : "Continuă"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardFooter>
           </Card>
         );
       })}

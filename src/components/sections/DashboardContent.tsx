@@ -4,12 +4,10 @@ import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddTransactionDialog } from "@/components/dialogs/AddTransactionDialog";
 import { ChartPieLabel } from "@/components/charts/ChartPie";
-import TransactionBar from "@/components/TransactionBar/TransactionSearchBar";
-import {
-  useTransactions,
-  TransactionsProvider,
-} from "@/components/TransactionBar/TransactionsProvider";
-function DashboardContent() {
+import { TransactionSearchBar } from "@/components/TransactionBar/TransactionSearchBar";
+import { useTransactions } from "@/components/TransactionBar/TransactionsProvider";
+
+export function DashboardContent() {
   const { isLoadingChart, pieChartData, addTransaction } = useTransactions();
 
   return (
@@ -28,17 +26,9 @@ function DashboardContent() {
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Tranzacții Recente</h2>
-        <TransactionBar />
+        <TransactionSearchBar />
       </div>
       <Toaster />
     </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <TransactionsProvider>
-      <DashboardContent />
-    </TransactionsProvider>
   );
 }
