@@ -18,7 +18,6 @@ export async function PUT(
     const parsedAmount = Number(amount);
     const parsedCategoryId = Number(categoryId);
 
-    // Validări
     if (
       !title ||
       !type ||
@@ -51,7 +50,6 @@ export async function PUT(
       );
     }
 
-    // Construim datele de update
     const updateData: any = {
       title,
       amount: parsedAmount,
@@ -63,7 +61,7 @@ export async function PUT(
     if (!isNaN(parsedCategoryId)) {
       updateData.category = { connect: { id: parsedCategoryId } };
     } else {
-      updateData.category = { disconnect: true }; // deconectăm categoria dacă ID invalid
+      updateData.category = { disconnect: true };
     }
 
     const updatedTransaction = await prisma.transaction.update({

@@ -2,7 +2,7 @@
 
 import { Calendar, Home, Inbox, Search, Settings } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 
 import {
   Sidebar,
@@ -18,7 +18,6 @@ import {
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// --------------------
 
 import { NavUser } from "../ui/nav-user";
 import { LoginForm } from "@/components/ui/login-form";
@@ -88,15 +87,9 @@ export function AppSidebar() {
     setIsLoginModalOpen(false);
     setShouldAnnounceLoginClose(true);
   };
-  const closeSignupModal = () => {
-    setIsSignupModalOpen(false);
-  };
-  const handleLoginClick = () => {
-    setIsLoginModalOpen(true);
-  };
-  const handleSignupClick = () => {
-    setIsSignupModalOpen(true);
-  };
+  const closeSignupModal = () => setIsSignupModalOpen(false);
+  const handleLoginClick = () => setIsLoginModalOpen(true);
+  const handleSignupClick = () => setIsSignupModalOpen(true);
   const handleLoginToSignup = () => {
     setIsLoginModalOpen(false);
     setIsSignupModalOpen(true);
@@ -107,9 +100,7 @@ export function AppSidebar() {
   };
 
   useEffect(() => {
-    if (!shouldAnnounceLoginClose) {
-      return;
-    }
+    if (!shouldAnnounceLoginClose) return;
 
     toast.info("Fereastra de autentificare închisă.", {
       description: "Fereastra de logare a fost închisă.",
@@ -202,7 +193,6 @@ export function AppSidebar() {
           onSwitch={handleSignupToLogin}
         />
       </AppModal>
-      <Toaster />
     </>
   );
 }

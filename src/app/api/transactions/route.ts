@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
     const parsedAmount = Number(amount);
     const parsedCategoryId = Number(categoryId);
 
-    // Validări
     if (
       !title ||
       !type ||
@@ -40,7 +39,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Construim datele pentru Prisma
     const transactionData: any = {
       title,
       amount: parsedAmount,
@@ -50,7 +48,6 @@ export async function POST(request: NextRequest) {
       user: { connect: { id: userId } },
     };
 
-    // Conectăm categoria doar dacă ID-ul e valid
     if (!isNaN(parsedCategoryId)) {
       transactionData.category = { connect: { id: parsedCategoryId } };
     }
