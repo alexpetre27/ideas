@@ -8,12 +8,17 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId();
+    if (!userId) {
+      return unauthenticatedError();
+    }
+
     const body = await request.json();
     const { title, amount, type, date, categoryId, note } = body;
 
     const parsedAmount = Number(amount);
     const parsedCategoryId = Number(categoryId);
 
+    // Validări
     if (
       !title ||
       !type ||
@@ -24,6 +29,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       return NextResponse.json(
         {
@@ -33,23 +39,24 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (isNaN(parsedCategoryId)) {
-      return NextResponse.json(
-        { error: "ID-ul categoriei ('categoryId') este invalid." },
-        { status: 400 }
-      );
+
+    // Construim datele pentru Prisma
+    const transactionData: any = {
+      title,
+      amount: parsedAmount,
+      type: type as TransactionType,
+      date: date ? new Date(date) : new Date(),
+      note: note || null,
+      user: { connect: { id: userId } },
+    };
+
+    // Conectăm categoria doar dacă ID-ul e valid
+    if (!isNaN(parsedCategoryId)) {
+      transactionData.category = { connect: { id: parsedCategoryId } };
     }
 
     const newTransaction = await prisma.transaction.create({
-      data: {
-        title,
-        amount: parsedAmount,
-        type: type as TransactionType,
-        date: new Date(date),
-        note: note || null,
-        category: { connect: { id: parsedCategoryId } },
-        user: { connect: { id: userId } },
-      },
+      data: transactionData,
       include: {
         category: { select: { id: true, name: true } },
       },
@@ -57,23 +64,21 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(newTransaction, { status: 201 });
   } catch (error) {
-    if ((error as Error).message === "Utilizator nelogat") {
-      return unauthenticatedError();
-    }
     console.error("❌ Eroare la crearea tranzacției:", error);
+
     if ((error as any)?.code === "P2025") {
       return NextResponse.json(
         { error: "Categoria (ID) nu există." },
         { status: 400 }
       );
     }
+
     return NextResponse.json(
       { error: "Eroare internă la server." },
       { status: 500 }
     );
   }
 }
-
 export async function GET(request: NextRequest) {
   try {
     const userId = await getUserId();
